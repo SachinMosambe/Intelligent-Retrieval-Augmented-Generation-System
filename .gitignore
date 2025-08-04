@@ -1,0 +1,19 @@
+# Build output
+dist/
+build/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+#dependencies
+venv/
+
+# Environment files
+.env
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
