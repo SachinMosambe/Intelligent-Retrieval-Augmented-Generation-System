@@ -10,6 +10,7 @@ Thumbs.db
 #dependencies
 venv/
 
+
 # Environment files
 .env
 

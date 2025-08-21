@@ -1,4 +1,4 @@
-from langchain_huggingface import HuggingFaceEndpoint
+from langchain_openai import ChatOpenAI
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
@@ -19,11 +19,13 @@ prompt = PromptTemplate.from_template("""
 """
 )
 
-llm = HuggingFaceEndpoint(
-        repo_id="mistralai/Mistral-7B-Instruct-v0.1",
-        huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
-        temperature =0.3, 
-        max_new_tokens = 512
+llm = ChatOpenAI(
+    openai_api_key = os.getenv("TOEGETHERAI_API_KEY"),
+    base_url= "https://api.together.xyz/v1",
+    model_name = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    temperature = 0.1,
+    max_tokens = 512,
+    top_p = 0.9,
     )
 
 def generate_response(retriever, query):

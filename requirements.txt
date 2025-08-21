@@ -9,4 +9,5 @@ requests
 faiss-cpu
 python-dotenv
 python-docx
-langchain-huggingace
+selenium
+unstrctured
