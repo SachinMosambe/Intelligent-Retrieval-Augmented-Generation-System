@@ -1,16 +1,43 @@
 import streamlit as st
 from src.loader import load_files, load_urls
-from src.embedding import create_vector_store
-from src.retriever import search_vector_store
-from src.generator import generate_response
+from src.embedding import create_vector_store_enhanced
+from src.retriever import search_vector_store_enhanced
+from src.generator import generate_response_enhanced
+from src.explainability import RAGExplainer
+import os
+import shutil
 
-st.set_page_config(page_title="Multi RAG chatbot", layout="wide")
-st.title("Ask question from your dogs or URLs")
+# Page config
+st.set_page_config(
+    page_title="Advanced RAG System",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-st.sidebar.header("Upload your files or provide URLs")
-option = st.sidebar.radio("Select an option:", ("Upload files", "Enter URLs"))
+# Custom CSS
+st.markdown("""
+<style>
+    .main-header {font-size: 2.5rem; color: #1E88E5; font-weight: bold;}
+    .sub-header {font-size: 1.2rem; color: #666;}
+    .source-box {background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin: 10px 0;}
+    .answer-box {background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin: 10px 0;}
+</style>
+""", unsafe_allow_html=True)
 
-# Initialize session state variables for documents, vector store, retriever, and chat
+st.markdown('<p class="main-header">🤖 Advanced RAG System</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">Multi-Source Document Q&A with Explainability</p>', unsafe_allow_html=True)
+
+# Sidebar
+st.sidebar.header("📁 Data Source Configuration")
+option = st.sidebar.radio("Select Input Method:", ("📄 Upload Files", "🌐 Enter URLs"))
+
+# Advanced settings
+with st.sidebar.expander("⚙️ Advanced Settings"):
+    enable_stopwords = st.checkbox("Remove Stopwords", value=False)
+    enable_explainability = st.checkbox("Show Explainability", value=True)
+    top_k_docs = st.slider("Top K Documents", 3, 10, 5)
+
+# Initialize session state
 if 'documents' not in st.session_state:
     st.session_state.documents = []
 if 'vector_store' not in st.session_state:
@@ -19,81 +46,121 @@ if 'retriever' not in st.session_state:
     st.session_state.retriever = None
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
+if 'processed' not in st.session_state:
+    st.session_state.processed = False
 
-# Reset query input and chat history when switching options
-if 'previous_option' not in st.session_state:
-    st.session_state.previous_option = option
-
-if st.session_state.previous_option != option:
-    st.session_state.query = ""
-    st.session_state.chat_history = []
-    st.session_state.previous_option = option
-
-# Handle file upload or URL input
-if option == "Upload files":
-    uploaded_files = st.sidebar.file_uploader("Choose files", type=["pdf", "docx", "txt"], accept_multiple_files=True)
-
-    if uploaded_files:
+# File upload
+if option == "📄 Upload Files":
+    uploaded_files = st.sidebar.file_uploader(
+        "Upload Documents",
+        type=["pdf", "docx", "txt"],
+        accept_multiple_files=True
+    )
+    
+    if uploaded_files and not st.session_state.processed:
+        os.makedirs("./data/uploads", exist_ok=True)
         file_paths = []
+        
         for file in uploaded_files:
-            file_path = f"./data/{file.name}"
+            file_path = f"./data/uploads/{file.name}"
             with open(file_path, "wb") as f:
                 f.write(file.getbuffer())
             file_paths.append(file_path)
         
-        # Load files only if they haven't been loaded already
-        if not st.session_state.documents:
-            st.session_state.documents = load_files(file_paths)
-            st.success("Files loaded successfully!")
+        with st.spinner("📖 Loading and preprocessing documents..."):
+            st.session_state.documents = load_files(file_paths, preprocess=True)
         
-elif option == "Enter URLs":
-    urls = st.sidebar.text_area("Enter URLs (separated by commas)")
+        if st.session_state.documents:
+            st.sidebar.success(f"✅ Loaded {len(st.session_state.documents)} documents")
 
-    if urls:
-        url_list = [url.strip() for url in urls.split(',') if url.strip()]  # Remove any empty URLs
-        if not url_list:
-            st.error("Please enter valid URLs.")
-        else:
-            st.write("Processing the following URLs:")
-            st.write(url_list)  # Debugging output
+# URL input
+elif option == "🌐 Enter URLs":
+    urls_input = st.sidebar.text_area("Enter URLs (one per line)", height=150)
+    
+    if urls_input and not st.session_state.processed:
+        url_list = [url.strip() for url in urls_input.split('\n') if url.strip()]
+        
+        with st.spinner("🌐 Fetching content from URLs..."):
+            st.session_state.documents = load_urls(url_list, preprocess=True)
+        
+        if st.session_state.documents:
+            st.sidebar.success(f"✅ Loaded {len(st.session_state.documents)} documents")
 
-            # Load URLs only if they haven't been loaded already
-            if not st.session_state.documents:
-                try:
-                    st.session_state.documents = load_urls(url_list)
-                    st.success(f"URLs loaded successfully! Found {len(st.session_state.documents)} documents.")
-                except Exception as e:
-                    st.error(f"Error loading URLs: {str(e)}")
-
-# Create vector store and retriever only if they haven't been created already
+# Create vector store
 if st.session_state.documents and not st.session_state.vector_store:
-    with st.spinner("Creating vector store..."):
-        st.session_state.vector_store = create_vector_store(st.session_state.documents)
-        st.session_state.retriever = search_vector_store(st.session_state.vector_store)
-    st.success("Vector store created successfully!")
+    with st.spinner("🔧 Building vector store with embeddings..."):
+        st.session_state.vector_store = create_vector_store_enhanced(st.session_state.documents)
+        st.session_state.retriever = search_vector_store_enhanced(st.session_state.vector_store)
+        st.session_state.processed = True
+    
+    st.sidebar.success("✅ System ready!")
+    st.sidebar.info(f"📊 Indexed {len(st.session_state.documents)} documents")
 
-# Clear chat button
-if st.button("Clear Chat"):
-    st.session_state.chat_history = []
-    st.session_state.query = ""
-    st.rerun()  # Reset the app state and rerun the app
+# Main interface
+st.markdown("---")
 
-# Display chat history (if any)
+col1, col2 = st.columns([5, 1])
+
+with col1:
+    query = st.text_input("💬 Ask a question:", placeholder="What would you like to know?")
+
+with col2:
+    if st.button("🗑️ Clear Chat"):
+        st.session_state.chat_history = []
+        st.rerun()
+
+# Process query
+if query and st.session_state.retriever:
+    with st.spinner("🤔 Thinking..."):
+        result = generate_response_enhanced(st.session_state.retriever, query)
+    
+    # Display answer
+    st.markdown('<div class="answer-box">', unsafe_allow_html=True)
+    st.markdown(f"**Answer:** {result['answer']}")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Display sources
+    if result['sources']:
+        st.markdown('<div class="source-box">', unsafe_allow_html=True)
+        st.markdown(f"**📚 Sources ({result['num_sources']}):**")
+        for i, source in enumerate(result['sources'], 1):
+            st.markdown(f"{i}. {source}")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Explainability (if enabled)
+    if enable_explainability:
+        with st.expander("🔍 View Retrieval Explainability"):
+            docs = st.session_state.retriever.retrieve_and_rerank(query, k=10, top_n=top_k_docs)
+            
+            # Show document previews
+            st.markdown("**Retrieved Documents:**")
+            for i, doc in enumerate(docs, 1):
+                st.text_area(
+                    f"Document {i}",
+                    doc.page_content[:300] + "...",
+                    height=100,
+                    key=f"doc_{i}"
+                )
+    
+    # Add to chat history
+    st.session_state.chat_history.append({
+        "question": query,
+        "answer": result['answer'],
+        "sources": result['sources']
+    })
+
+# Display chat history
 if st.session_state.chat_history:
-    for entry in st.session_state.chat_history:
-        st.write(f"**User:** {entry['question']}")
-        st.write(f"**Answer:** {entry['answer']}")
+    st.markdown("---")
+    st.markdown("### 📜 Chat History")
+    
+    for i, entry in enumerate(reversed(st.session_state.chat_history[-5:]), 1):
+        with st.expander(f"Q{i}: {entry['question'][:50]}..."):
+            st.markdown(f"**Q:** {entry['question']}")
+            st.markdown(f"**A:** {entry['answer']}")
+            if entry['sources']:
+                st.markdown(f"**Sources:** {', '.join(entry['sources'])}")
 
-# Query input
-query = st.text_input("Ask a question related to uploaded files or URLs", key="query")
-
-if query:
-    if st.session_state.retriever:
-        with st.spinner("Generating response..."):
-            response = generate_response(st.session_state.retriever, query)
-        st.session_state.chat_history.append({"question": query, "answer": response})
-        st.markdown(f"**Answer:** {response}")
-    else:
-        st.error("Vector store or retriever is not available. Please load documents first.")
-else:
-    st.info("Please upload files or enter URLs to proceed.")
+# Info box
+if not st.session_state.processed:
+    st.info("👈 Upload documents or enter URLs to get started!")

@@ -1,107 +1,294 @@
-# Multi-Source Knowledge Retrieval and Answer Generation System
+# IntelliRAG 🧠
 
-Multi-Source Knowledge Retrieval and Answer Generation System is a Streamlit-based application that enables users to interactively ask questions about the content of uploaded documents (PDF, DOCX, TXT) or web URLs. It leverages Retrieval-Augmented Generation (RAG) techniques, vector embeddings, and LLMs to provide accurate, context-aware answers.
+**Intelligent Retrieval-Augmented Generation System**
 
----
-
-## Features
-
-- **Multi-source RAG**: Query across multiple uploaded files or URLs.
-- **Supported formats**: PDF, DOCX, TXT, and web pages.
-- **Modern UI**: Built with Streamlit for an interactive chat experience.
-- **Vector Search**: Uses FAISS and sentence-transformers for efficient retrieval.
-- **LLM Integration**: Uses Together AI's Llama-3.1-8B-Instruct-Turbo for answer generation.
-- **Session Memory**: Maintains chat history for context.
+A production-ready RAG system with advanced retrieval, cross-encoder reranking, and comprehensive RAGAS evaluation metrics.
 
 ---
 
-## Demo
+## ✨ Features
 
-![screenshot or gif here if available]
-
----
-
-## Installation
-
-1. **Clone the repository:**
-   ```powershell
-   git clone https://github.com/SachinMosambe/Web-RAG-Base-Chatbot.git
-   cd Web-RAG-Base-Chatbot
-   ```
-
-2. **Install dependencies:**
-   ```powershell
-   pip install -r requirements.txt
-   ```
-
-3. **Set up environment variables:**
-   - Create a `.env` file in the root directory with the following keys:
-     ```env
-     TOEGETHERAI_API_KEY=your_togetherai_api_key
-     HUGGINGFACEHUB_API_TOKEN=your_huggingface_token
-     ```
-
-4. **(Optional) Install browser drivers for Selenium:**
-   - For URL loading, [download the appropriate driver](https://selenium-python.readthedocs.io/installation.html#drivers) and ensure it is in your PATH.
+- 🔍 **Advanced Retrieval** - FAISS vector store with semantic search
+- 🎯 **Cross-Encoder Reranking** - MS-MARCO model for improved relevance
+- 📊 **Query Expansion** - Automatic query variations for better recall
+- 🤖 **LLM Integration** - Meta-Llama 3.1 via Together AI
+- 📈 **RAGAS Evaluation** - Comprehensive quality metrics
+- 📄 **Multi-Format Support** - PDF, DOCX, TXT, images with OCR
+- 🔬 **Explainability** - Retrieval visualization and source attribution
 
 ---
 
-## Usage
+## 🚀 Quick Start
 
-1. **Start the Streamlit app:**
-   ```powershell
-   streamlit run app.py
-   ```
+### Installation
 
-2. **Interact with the chatbot:**
-   - Upload files or enter URLs in the sidebar.
-   - Ask questions in the main chat window.
-   - View answers and chat history.
+```bash
+# Clone repository
+git clone https://github.com/yourusername/intellirag.git
+cd intellirag
 
----
+# Install dependencies
+pip install -r requirements.txt
 
-## Project Structure
-
+# Set up environment
+echo "TOEGETHERAI_API_KEY=your_api_key_here" > .env
 ```
-├── app.py                  # Streamlit app entry point
-├── requirements.txt        # Python dependencies
-├── .env                    # Environment variables (not committed)
-├── data/                   # Uploaded files and vector store
-│   └── vector_store/       # FAISS vector store (auto-generated)
-├── src/                    # Core modules
-│   ├── loader.py           # File/URL loading logic
-│   ├── embedding.py        # Embedding and vector store creation
-│   ├── retriever.py        # Vector search and retrieval
-│   └── generator.py        # LLM-based answer generation
-└── test.py                 # Test script for environment and embeddings
+
+### Basic Usage
+
+```python
+from src.embedding import create_vector_store_enhanced
+from src.generator import generate_response_enhanced
+from src.loader import load_files
+from src.retriever import search_vector_store_enhanced
+
+# Load documents
+documents = load_files(["./data/your_document.pdf"])
+
+# Create vector store
+vector_store = create_vector_store_enhanced(documents)
+
+# Create retriever
+retriever = search_vector_store_enhanced(vector_store)
+
+# Ask question
+result = generate_response_enhanced(retriever, "What is the main topic?")
+
+print(f"Answer: {result['answer']}")
+print(f"Sources: {result['sources']}")
 ```
 
 ---
 
-## How It Works
+## 📊 Evaluation
 
-1. **Load Documents**: Upload files or enter URLs. Documents are loaded and parsed using LangChain loaders.
-2. **Create Vector Store**: Documents are split into chunks and embedded using HuggingFace models. FAISS is used for fast similarity search.
-3. **Ask Questions**: User queries are matched to relevant document chunks via vector search.
-4. **Generate Answers**: The LLM (Llama-3.1-8B-Instruct-Turbo via Together AI) generates answers using the retrieved context.
+Run comprehensive RAGAS evaluation:
+
+```python
+from src.evaluation import RAGEvaluator
+
+evaluator = RAGEvaluator(
+    nq_file_path="./data/nq-train-sample.jsonl",
+    num_questions=50,
+    num_docs=100
+)
+
+evaluator.run_full_evaluation()
+```
+
+### Metrics
+
+| Metric | Target | Description |
+|--------|--------|-------------|
+| Faithfulness | >0.9 | No hallucinations |
+| Answer Relevancy | >0.8 | Addresses the question |
+| Context Precision | >0.8 | Well-ranked results |
+| Context Recall | >0.7 | Retrieved enough info |
+| Context Relevancy | >0.8 | Context matches query |
 
 ---
 
-## Requirements
+## 📁 Project Structure
 
-- Python 3.8+
-- [Together AI API Key](https://www.together.ai/)
-- [HuggingFace API Token](https://huggingface.co/settings/tokens)
-- Chrome/Firefox driver for Selenium (for URL loading)
+```
+intellirag/
+├── src/
+│   ├── embedding.py           # Vector store creation
+│   ├── retriever.py           # Advanced retriever with reranking
+│   ├── generator.py           # LLM response generation
+│   ├── loader.py              # Document loader with OCR
+│   ├── evaluation.py          # RAGAS evaluation pipeline
+│   ├── explainability.py      # Visualization tools
+│   └── test_data_loader.py    # NQ dataset loader
+├── data/                      # Documents and datasets
+├── venv/                      # Virtual environment
+├── app.py                     # Main application
+├── requirements.txt           # Dependencies
+├── .env                       # Environment variables
+├── .gitignore
+├── LICENSE
+└── README.md
+```
 
 ---
 
-## Troubleshooting
+## ⚙️ Configuration
 
-- **Selenium errors**: Ensure the correct browser driver is installed and in your PATH.
-- **API errors**: Check your API keys in the `.env` file.
-- **Vector store issues**: Delete the `data/vector_store/` folder to reset embeddings.
+### Chunking Strategy
+```python
+chunk_size = 800        # Tokens per chunk
+chunk_overlap = 200     # Overlap between chunks
+```
+
+### Retrieval Settings
+```python
+k = 10                  # Initial retrieval
+top_n = 5              # After reranking
+```
+
+### LLM Settings
+```python
+model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
+temperature = 0.1       # Low for factual answers
+max_tokens = 512
+```
 
 ---
 
+## 🔧 Advanced Features
+
+### Explainability
+
+```python
+from src.explainability import RAGExplainer
+
+explainer = RAGExplainer()
+
+# Visualize retrieval scores
+plt = explainer.visualize_retrieval_scores(docs, scores, query, top_n=5)
+plt.show()
+
+# Get source attribution
+attribution = explainer.create_source_attribution_map(answer, sources)
+```
+
+### OCR Support
+
+Automatically handles scanned PDFs and images:
+
+```python
+from src.loader import load_files
+
+# Supports: .pdf, .docx, .txt, .png, .jpg, .tiff
+documents = load_files([
+    "scanned_document.pdf",
+    "image.png",
+    "text.docx"
+])
+```
+
+---
+
+## 📦 Dependencies
+
+Core libraries:
+- `langchain` - RAG framework
+- `langchain-openai` - LLM integration
+- `langchain-community` - Document loaders
+- `faiss-cpu` - Vector store
+- `sentence-transformers` - Embeddings and reranking
+- `ragas` - Evaluation metrics
+- `pytesseract` - OCR engine
+- `beautifulsoup4` - HTML parsing
+
+See `requirements.txt` for complete list.
+
+---
+
+## 🎯 Use Cases
+
+### Document Q&A
+Build intelligent question-answering systems over your documents.
+
+### Knowledge Base
+Create searchable knowledge bases with semantic understanding.
+
+### Research Assistant
+Retrieve and synthesize information from multiple sources.
+
+### Customer Support
+Answer customer queries using your documentation.
+
+---
+
+## 🛠️ Development
+
+### Setup Development Environment
+
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Install Tesseract (for OCR)
+# Ubuntu/Debian
+sudo apt-get install tesseract-ocr
+
+# macOS
+brew install tesseract
+
+# Windows
+# Download from: https://github.com/UB-Mannheim/tesseract/wiki
+```
+
+### Running Tests
+
+```bash
+# Test document loader
+python -m src.test_data_loader
+
+# Test complete pipeline
+python -m src.evaluation
+```
+
+---
+
+## 📝 Environment Variables
+
+Create a `.env` file:
+
+```bash
+# Required
+TOEGETHERAI_API_KEY=your_together_ai_api_key
+
+# Optional
+OPENAI_API_KEY=your_openai_api_key  # If using OpenAI instead
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- Natural Questions dataset by Google AI
+- RAGAS evaluation framework
+- LangChain for RAG infrastructure
+- Sentence Transformers for embeddings
+- Together AI for LLM hosting
+
+---
+
+## 📬 Contact
+
+For questions or support, please open an issue on GitHub.
+
+---
+
+## 🚦 Status Indicators
+
+- 🟢 Production Ready: All metrics above targets
+- 🟡 Good: Minor improvements needed
+- 🔴 Needs Work: Significant tuning required
+
+---
 

@@ -18,3 +18,8 @@ venv/
 .vscode/
 .idea/
 *.swp
+
+
+
+# data files
+data/
